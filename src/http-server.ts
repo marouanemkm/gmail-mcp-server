@@ -8,6 +8,7 @@ import {
   ListResourcesRequestSchema,
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import type { Request, Response } from "express";
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -49,12 +50,12 @@ class MCPHTTPServer {
 
   private setupRoutes(): void {
     // Health check endpoint
-    this.app.get("/health", (req, res) => {
+    this.app.get("/health", (_req: Request, res: Response) => {
       res.json({ status: "ok", timestamp: new Date().toISOString() });
     });
 
     // MCP SSE endpoint
-    this.app.get("/sse", async (req, res) => {
+    this.app.get("/sse", async (req: Request, res: Response) => {
       console.log("[MCP] New SSE connection established");
 
       const transport = new SSEServerTransport("/message", res);
@@ -69,7 +70,7 @@ class MCPHTTPServer {
     });
 
     // MCP message endpoint for SSE
-    this.app.post("/message", async (req, res) => {
+    this.app.post("/message", async (req: Request, res: Response) => {
       console.log("[MCP] Received message:", JSON.stringify(req.body, null, 2));
 
       // The SSE transport will handle this
@@ -77,7 +78,7 @@ class MCPHTTPServer {
     });
 
     // Info endpoint
-    this.app.get("/", (req, res) => {
+    this.app.get("/", (_req: Request, res: Response) => {
       res.json({
         name: "MCP Gmail & PostgreSQL Server",
         version: "1.0.0",
@@ -128,7 +129,7 @@ class MCPHTTPServer {
     // Handle tool calls
     server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
-      const typedArgs = args as Record<string, unknown>;
+      const typedArgs = (args || {}) as Record<string, unknown>;
 
       console.log(`[MCP] Tool call: ${name}`, typedArgs);
 
@@ -176,7 +177,7 @@ class MCPHTTPServer {
     });
 
     // Error handling
-    server.onerror = (error) => {
+    server.onerror = (error: Error) => {
       console.error("[MCP Error]", error);
     };
 
