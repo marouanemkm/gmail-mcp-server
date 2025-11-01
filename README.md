@@ -2,6 +2,21 @@
 
 A unified Model Context Protocol (MCP) server that provides AI agents with read and write access to Gmail and PostgreSQL databases.
 
+## 🚀 Two Modes Available
+
+### 1. **stdio Mode** (for Claude Desktop)
+
+- Direct integration with Claude Desktop
+- Uses standard input/output
+- No network configuration needed
+
+### 2. **HTTP/SSE Mode** (for n8n, remote agents)
+
+- HTTP server with Server-Sent Events (SSE)
+- Can be deployed to VPS
+- Accessible via URL
+- **Perfect for n8n AI Agent with MCP Client connector**
+
 ## Features
 
 - **Gmail Integration**: Send emails, read emails, list emails, and manage labels
@@ -11,7 +26,7 @@ A unified Model Context Protocol (MCP) server that provides AI agents with read 
 
 ## Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - npm or yarn
 - Gmail API credentials (Google Cloud Console)
 - PostgreSQL database
@@ -47,10 +62,12 @@ cp .env.example .env
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a new project or select an existing one
 3. Enable the **Gmail API**:
+
    - Navigate to "APIs & Services" > "Library"
    - Search for "Gmail API" and click "Enable"
 
 4. Create OAuth 2.0 credentials:
+
    - Go to "APIs & Services" > "Credentials"
    - Click "Create Credentials" > "OAuth client ID"
    - Choose "Desktop app" as application type
@@ -59,10 +76,13 @@ cp .env.example .env
 5. Get your Client ID and Client Secret from the credentials
 
 6. Get a Refresh Token:
+
    - Run this script to authorize and get a refresh token:
+
    ```bash
    node scripts/get-gmail-token.js
    ```
+
    - Or use Google's OAuth 2.0 Playground:
      1. Go to https://developers.google.com/oauthplayground/
      2. Click the gear icon (⚙️) and check "Use your own OAuth credentials"
@@ -76,6 +96,7 @@ cp .env.example .env
      7. Copy the "Refresh token" value
 
 7. Add to `.env`:
+
 ```env
 GMAIL_CLIENT_ID=your_client_id_from_step_5
 GMAIL_CLIENT_SECRET=your_client_secret_from_step_5
@@ -97,19 +118,34 @@ POSTGRES_SSL=false               # set to true if using SSL
 
 ## Usage
 
-### Development Mode
+### For n8n (HTTP Mode) - **RECOMMENDED**
+
+Start the HTTP server:
 
 ```bash
-npm run dev
+# Development
+npm run dev:http
+
+# Production
+npm run build
+npm run start:http
 ```
 
-### Production Mode
+Server will be available at: `http://localhost:3000/sse`
+
+**See [N8N_SETUP.md](N8N_SETUP.md) for complete n8n integration guide.**
+
+### For Claude Desktop (stdio Mode)
 
 ```bash
+# Development
+npm run dev
+
+# Production
 npm start
 ```
 
-The server runs on stdio and communicates via JSON-RPC, following the MCP protocol.
+Configure in Claude Desktop's config file (see Configuration section below).
 
 ## Available Tools
 
@@ -117,37 +153,33 @@ The server runs on stdio and communicates via JSON-RPC, following the MCP protoc
 
 - **`gmail_list_emails`**: List emails from inbox with optional filters
   - Parameters: `query`, `maxResults`, `labelIds`
-  
 - **`gmail_read_email`**: Read a specific email by message ID
   - Parameters: `messageId`, `format`
-  
 - **`gmail_send_email`**: Send an email
   - Parameters: `to`, `subject`, `body`, `htmlBody` (optional), `cc` (optional), `bcc` (optional)
-  
 - **`gmail_get_labels`**: Get all Gmail labels
 
 ### PostgreSQL Tools
 
 - **`postgres_query`**: Execute SELECT queries (read-only)
   - Parameters: `query`, `params` (optional array)
-  
 - **`postgres_execute`**: Execute write operations (INSERT, UPDATE, DELETE)
   - Parameters: `query`, `params` (optional array)
-  
 - **`postgres_get_tables`**: List all tables in the database
   - Parameters: `schema` (optional, default: 'public')
-  
 - **`postgres_get_table_schema`**: Get schema information for a table
   - Parameters: `tableName`, `schema` (optional, default: 'public')
 
 ## Deployment to VPS
 
 1. **Transfer files to your VPS:**
+
 ```bash
 scp -r . user@your-vps-ip:/path/to/mcp-server/
 ```
 
 2. **SSH into your VPS and install:**
+
 ```bash
 ssh user@your-vps-ip
 cd /path/to/mcp-server
@@ -160,6 +192,7 @@ npm run build
 4. **Run as a service (using PM2 or systemd):**
 
 With PM2:
+
 ```bash
 npm install -g pm2
 pm2 start npm --name "mcp-server" -- start
@@ -167,6 +200,7 @@ pm2 save
 ```
 
 With systemd, create `/etc/systemd/system/mcp-server.service`:
+
 ```ini
 [Unit]
 Description=MCP Gmail & PostgreSQL Server
@@ -185,6 +219,7 @@ WantedBy=multi-user.target
 ```
 
 Then:
+
 ```bash
 sudo systemctl enable mcp-server
 sudo systemctl start mcp-server
@@ -218,11 +253,13 @@ sudo systemctl start mcp-server
 ## Troubleshooting
 
 ### Gmail not working
+
 - Verify your refresh token is valid and not expired
 - Check that all required OAuth scopes are granted
 - Ensure `GMAIL_CLIENT_ID` and `GMAIL_CLIENT_SECRET` are correct
 
 ### PostgreSQL connection issues
+
 - Verify database credentials are correct
 - Check if PostgreSQL is running and accessible
 - For remote connections, ensure firewall rules allow connections
@@ -231,4 +268,3 @@ sudo systemctl start mcp-server
 ## License
 
 MIT
-
